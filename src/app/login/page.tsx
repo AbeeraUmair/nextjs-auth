@@ -24,7 +24,7 @@ export default function LoginPage() {
 
   return (
     <div>
-      <h1>Login</h1>
+      <h1 className="text-4xl">Login</h1>
       <form onSubmit={handleSubmit}>
         <input type="email" name="email" placeholder="Email" required />
         <input type="password" name="password" placeholder="Password" required />

@@ -1,14 +1,12 @@
-"use client";
-import React from "react";
+"use client"
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 
 const Navbar = () => {
   const { data: session } = useSession();
   return (
-   
-    <div>
-      <ul className="flex justify-between m-8 item-center text-white">
+    <div className="bg-gray-800 p-4">
+      <ul className="flex justify-between m-8 items-center text-white">
         <div>
           <Link href="/">
             <li className="list-none">Home</li>
