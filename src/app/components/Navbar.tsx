@@ -1,7 +1,7 @@
 "use client"
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
-
+import LogoutButton from "./LogoutButton";
 const Navbar = () => {
   const { data: session } = useSession();
   return (
@@ -35,7 +35,7 @@ const Navbar = () => {
                   }}
                   className="p-2 px-5 -mt-1 bg-blue-800 rounded-full"
                 >
-                  Logout
+                 <LogoutButton/>
                 </button>
               </li>
             </>
