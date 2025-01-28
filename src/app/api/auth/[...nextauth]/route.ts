@@ -7,7 +7,8 @@ import User from "../../../models/User";
 
 const handler = NextAuth({
   providers: [
-    CredentialsProvider({
+    CredentialsProvider(
+    {
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
