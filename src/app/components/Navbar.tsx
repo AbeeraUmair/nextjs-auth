@@ -6,12 +6,12 @@ import { signOut, useSession } from "next-auth/react";
 const Navbar = () => {
   const { data: session } = useSession();
   return (
-    console.log(session),
+   
     <div>
-      <ul className="flex justify-between m-10 item-center">
+      <ul className="flex justify-between m-8 item-center text-white">
         <div>
           <Link href="/">
-            <li>Home</li>
+            <li className="list-none">Home</li>
           </Link>
         </div>
         <div className="flex gap-10">
