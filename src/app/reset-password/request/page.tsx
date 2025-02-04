@@ -30,7 +30,7 @@ export default function RequestReset() {
 
 We received a request to reset your password. If you made this request, click the button below to reset your password:
 
-Reset Password: http://localhost:3000/reset-password/set-new-password?token=${data.token}`,
+Reset Password: https://nextjs-auth-neon-six.vercel.app/reset-password/set-new-password?token=${data.token}`,
       }
 
       const response = await emailjs.send(
