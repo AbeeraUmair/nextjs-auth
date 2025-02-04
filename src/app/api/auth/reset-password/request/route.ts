@@ -1,4 +1,5 @@
-// /api/auth/reset-password/request/route.ts
+// app/api/auth/reset-password/request/route.ts 
+
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import User from "@/app/models/User";

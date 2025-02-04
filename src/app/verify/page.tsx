@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function VerifyPage() {
+function VerifyPageContent() {
   const [verified, setVerified] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-  const searchParams = useSearchParams(); // ✅ Use the hook
+  const searchParams = useSearchParams(); // ✅ Wrapped inside Suspense
 
   const email = searchParams.get("email"); // ✅ Extract email safely
 
@@ -58,5 +58,14 @@ export default function VerifyPage() {
         </>
       )}
     </div>
+  );
+}
+
+// ✅ Wrap the component inside Suspense
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<p>Loading...</p>}>
+      <VerifyPageContent />
+    </Suspense>
   );
 }

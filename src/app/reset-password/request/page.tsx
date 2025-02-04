@@ -1,12 +1,11 @@
+// app/reset-password/request/page.tsx 
 "use client"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import emailjs from "@emailjs/browser"
 
 export default function RequestReset() {
   const [email, setEmail] = useState("")
   const [message, setMessage] = useState("")
-  const router = useRouter()
 
   const handleSubmit = async () => {
     try {
@@ -31,7 +30,7 @@ export default function RequestReset() {
 
 We received a request to reset your password. If you made this request, click the button below to reset your password:
 
-Reset Password: http://localhost:3000/reset-password?token=${data.token}`,
+Reset Password: http://localhost:3000/reset-password/set-new-password?token=${data.token}`,
       }
 
       const response = await emailjs.send(
@@ -43,7 +42,7 @@ Reset Password: http://localhost:3000/reset-password?token=${data.token}`,
 
       if (response.status === 200) {
         setMessage("Password reset link sent to your email.")
-        router.push("/reset-password")
+       
       } else {
         setMessage("Failed to send the reset link. Please try again.")
       }

@@ -1,4 +1,5 @@
-// /api/auth/reset-password/confirm/route.ts 
+// app/api/auth/reset-password/confirm/route.ts 
+
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import User from "@/app/models/User";
