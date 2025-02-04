@@ -24,7 +24,7 @@ export default function Enable2FA() {
 
       const emailData = {
         to_name: email.split("@")[0], // Using the part before @ as the name
-        to_email: email,
+        email: email,
         otp_message: `🔐 Your One-Time Password (OTP)
 
 Use the following OTP to verify your account. This OTP will expire in 10 minutes.

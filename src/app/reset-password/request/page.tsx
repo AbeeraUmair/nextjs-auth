@@ -24,7 +24,7 @@ export default function RequestReset() {
 
       const emailData = {
         to_name: email.split("@")[0], // Using the part before @ as the name
-        to_email: email,
+        email: email,
         otp_message: "",
         reset_message: `🔐 Password Reset Request
 
