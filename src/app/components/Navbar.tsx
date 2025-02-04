@@ -3,20 +3,26 @@ import Link from "next/link";
 import React from "react";
 import { useSession } from "next-auth/react";
 import LogoutButton from "./LogoutButton";
+import MenuButton from "./MenuButton";
 
-// Add the type for props here
-const Navbar = () => {
+interface NavbarProps {
+  toggleSidebar: () => void;
+  isOpen: boolean;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ toggleSidebar, isOpen }) => {
   const { data: session } = useSession();
 
   return (
-    <div className="bg-gray-800 z-40 p-4">
-      <ul className="flex justify-between m-8 items-center text-white">
-        <div>
-         
+    <div className="bg-gray-800 p-10 fixed top-0 left-0 right-0 z-50 shadow-lg">
+      <ul className="flex justify-between items-center text-white">
+        <div className="flex items-center gap-4">
+          <MenuButton isOpen={isOpen} toggleSidebar={toggleSidebar} />
           <Link href="/">
-            <li className="list-none">Authentication</li>
+            <li className="list-none text-3xl">Authentication</li>
           </Link>
         </div>
+
         <div className="flex gap-10">
           <Link href="/dashboard">
             <li>Dashboard</li>
