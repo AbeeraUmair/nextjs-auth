@@ -19,7 +19,7 @@ export default function Home() {
         {/* Feature text on dark background */}
         <div className="bg-gray-800 text-white py-6 px-8 rounded-lg mb-12 transform hover:scale-105 transition-transform duration-300">
           <p className="text-xl md:text-2xl">
-            Complete authentication solution with Next.js 14, featuring 2FA, Password Reset, and more
+            Complete authentication solution with Next.js 15, featuring 2FA, Password Reset, and more
           </p>
         </div>
 

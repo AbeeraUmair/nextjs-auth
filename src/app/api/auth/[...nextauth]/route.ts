@@ -6,6 +6,7 @@ import GitHubProvider from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
 import User from "../../../models/User";
+import { verifyToken } from "node-2fa";
 
 const handler = NextAuth({
   session: { strategy: "jwt" },
@@ -15,27 +16,46 @@ const handler = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        totpCode: { label: "2FA Code", type: "text" }
       },
       async authorize(credentials) {
-        await connectDB();
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Please enter email and password");
+        }
 
-        const user = await User.findOne({ email: credentials?.email });
+        await connectDB();
+        const user = await User.findOne({ email: credentials.email });
 
         if (!user) {
-          throw new Error("No user found with this email");
+          throw new Error("No user found");
         }
 
-        if (!user.verified) {
-          throw new Error("Please verify your email first");
-        }
-
-        const isValid = await bcrypt.compare(credentials?.password || "", user.password);
-
+        const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) {
           throw new Error("Invalid password");
         }
 
-        return { id: user._id.toString(), name: user.name, email: user.email };
+        // Check if 2FA is enabled
+        if (user.twoFactorEnabled) {
+          if (!credentials.totpCode) {
+            throw new Error("2FA_REQUIRED");
+          }
+
+          const isValidToken = verifyToken(
+            user.twoFactorSecret,
+            credentials.totpCode
+          );
+
+          if (!isValidToken || isValidToken.delta !== 0) {
+            throw new Error("Invalid 2FA code");
+          }
+        }
+
+        return {
+          id: user._id.toString(),
+          email: user.email,
+          name: user.name
+        };
       },
     }),
     GoogleProvider({
@@ -70,21 +90,18 @@ const handler = NextAuth({
       return true;
     },
     async jwt({ token, user }) {
-      if (user && "id" in user) {
-          token.id = user.id;
-      } else if (user && "_id" in user) {
-          token.id = (user as { _id: string })._id.toString();
+      if (user) {
+        token.id = user.id;
       }
       return token;
-  },
-  async session({ session, token }) {
-      if (session.user && token.id) {
-          session.user.id = token.id;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id;
       }
-      console.log(session.user?.id);
       return session;
+    },
   },
-},
 });
 
 export { handler as GET, handler as POST };

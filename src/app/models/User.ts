@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema({
   otp: String,
   otpExpires: Date,
   provider: { type: String, default: 'credentials' },
+  twoFactorSecret: String,
 }, { timestamps: true });
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);
