@@ -28,7 +28,7 @@ export default function Sidebar({
         <nav className="space-y-4 mt-8">
           <SidebarLink href="/auth/login" text="🔒 Login" />
           <SidebarLink href="/auth/register" text="📝 Register" />
-          <SidebarLink href="settings/enable-2fa" text="🛡️ Enable 2FA" />
+          <SidebarLink href="/settings/enable-2fa" text="🛡️ Enable 2FA" />
           <SidebarLink href="/reset-password/request" text="📩 Reset Password" />
         </nav>
       </div>
