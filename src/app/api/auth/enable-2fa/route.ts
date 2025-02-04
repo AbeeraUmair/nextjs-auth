@@ -3,9 +3,18 @@ import { generateSecret } from "node-2fa";
 import User from "@/app/models/User";
 import connectDB from "@/lib/db";
 import QRCode from "qrcode";
+import { getServerSession } from "next-auth";
 
 export async function POST(req: Request) {
   try {
+    // Verify session
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ 
+        error: "Unauthorized" 
+      }, { status: 401 });
+    }
+
     await connectDB();
     const { userId } = await req.json();
     
@@ -38,24 +47,30 @@ export async function POST(req: Request) {
       }, { status: 500 });
     }
 
-    // Generate QR code as data URL
-    const otpauthUrl = `otpauth://totp/AuthFlow:${user.email}?secret=${newSecret.secret}&issuer=AuthFlow`;
-    const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
+    try {
+      // Generate QR code as data URL
+      const otpauthUrl = `otpauth://totp/AuthFlow:${user.email}?secret=${newSecret.secret}&issuer=AuthFlow`;
+      const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
 
-    // Save secret to user (but mark as unverified)
-    user.twoFactorSecret = newSecret.secret;
-    user.twoFactorEnabled = false;
-    await user.save();
+      // Save secret to user (but mark as unverified)
+      user.twoFactorSecret = newSecret.secret;
+      user.twoFactorEnabled = false;
+      await user.save();
 
-    return NextResponse.json({ 
-      qr: qrCodeDataUrl,
-      message: "2FA setup initiated successfully" 
-    });
+      return NextResponse.json({ 
+        qr: qrCodeDataUrl,
+        message: "2FA setup initiated successfully" 
+      });
+    } catch (qrError) {
+      console.error("QR Code Generation Error:", qrError);
+      return NextResponse.json({ 
+        error: "Failed to generate QR code" 
+      }, { status: 500 });
+    }
   } catch (error) {
     console.error("2FA Setup Error:", error);
-    return NextResponse.json(
-      { error: "Failed to setup 2FA" },
-      { status: 500 }
-    );
+    return NextResponse.json({ 
+      error: "Internal server error during 2FA setup" 
+    }, { status: 500 });
   }
 } 

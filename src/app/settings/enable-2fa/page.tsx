@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
@@ -8,17 +8,26 @@ export default function Enable2FAPage() {
   const [verificationCode, setVerificationCode] = useState("")
   const [message, setMessage] = useState("")
   const [isSetupComplete, setIsSetupComplete] = useState(false)
-  const { data: session } = useSession()
+  const [isLoading, setIsLoading] = useState(false)
+  const { data: session, status } = useSession()
   const router = useRouter()
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth/login")
+    }
+  }, [status, router])
 
   const initiate2FASetup = async () => {
     try {
-      if (!session?.user?.id) {
-        setMessage("User session not found");
-        return;
-      }
+      setIsLoading(true)
+      setMessage("")
 
-      console.log("Sending userId:", session.user.id); // Debug log
+      if (!session?.user?.id) {
+        setMessage("Please log in to enable 2FA")
+        return
+      }
 
       const response = await fetch("/api/auth/enable-2fa", {
         method: "POST",
@@ -28,23 +37,25 @@ export default function Enable2FAPage() {
         body: JSON.stringify({ 
           userId: session.user.id 
         }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
       
       if (!response.ok) {
-        throw new Error(data.error || "Failed to setup 2FA");
+        throw new Error(data.error || "Failed to setup 2FA")
       }
 
       if (data.qr) {
-        setQrCode(data.qr);
-        setMessage(data.message || "Scan this QR code with your authenticator app");
+        setQrCode(data.qr)
+        setMessage("Scan this QR code with your authenticator app")
       } else {
-        setMessage("No QR code received");
+        throw new Error("No QR code received from server")
       }
     } catch (error: unknown) {
-      console.error("2FA Setup Error:", error);
-      setMessage(error instanceof Error ? error.message : "Failed to initiate 2FA setup");
+      console.error("2FA Setup Error:", error)
+      setMessage(error instanceof Error ? error.message : "Failed to initiate 2FA setup")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -74,8 +85,12 @@ export default function Enable2FAPage() {
     }
   }
 
-  if (!session) {
-    return <div>Please log in to enable 2FA</div>
+  if (status === "loading") {
+    return <div className="text-center mt-10">Loading...</div>
+  }
+
+  if (status === "unauthenticated") {
+    return null // Will redirect via useEffect
   }
 
   return (
@@ -85,9 +100,12 @@ export default function Enable2FAPage() {
       {!qrCode && !isSetupComplete && (
         <button
           onClick={initiate2FASetup}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          disabled={isLoading}
+          className={`w-full ${
+            isLoading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'
+          } text-white py-2 rounded transition-colors`}
         >
-          Set up 2FA
+          {isLoading ? 'Setting up...' : 'Set up 2FA'}
         </button>
       )}
 
