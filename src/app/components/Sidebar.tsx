@@ -30,6 +30,7 @@ export default function Sidebar({
           <SidebarLink href="/auth/register" text="📝 Register" />
           <SidebarLink href="/settings/enable-2fa" text="🛡️ Enable 2FA" />
           <SidebarLink href="/reset-password/request" text="📩 Reset Password" />
+          <SidebarLink href="/docs" text="📚 Docs" />
         </nav>
       </div>
     </div>
