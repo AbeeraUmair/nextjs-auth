@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .doc-link {
+    @apply text-blue-600 hover:text-blue-800 font-medium;
+  }
+
+  .doc-section {
+    @apply scroll-mt-20;
+  }
+
+  .code-block {
+    @apply my-6 rounded-lg shadow-lg bg-gray-800 p-4;
+  }
+} 
