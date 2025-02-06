@@ -4,7 +4,7 @@ import User from "@/app/models/User";
 import connectDB from "@/lib/db";
 import QRCode from "qrcode";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../[...nextauth]/route";
+import { authOptions } from "../auth.config";
 
 export async function POST(req: Request) {
   try {

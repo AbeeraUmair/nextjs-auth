@@ -1,11 +1,12 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import DocsSidebar from '../components/DocsSidebar';
 import { HiMenu } from 'react-icons/hi';
 import { FaGithub } from 'react-icons/fa';
+import { useSearchParams } from 'next/navigation';
 
 
 const proseClasses = `
@@ -32,8 +33,9 @@ const proseClasses = `
 
 const codeBlockClasses = "my-6 rounded-lg shadow-lg";
 
-export default function DocsPage() {
-  const [activeTab, setActiveTab] = useState('getting-started');
+function DocsContent() {
+  const searchParams = useSearchParams();
+  const activeTab = searchParams?.get('tab') || 'getting-started';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const installationCode = `npm install authflow
@@ -57,28 +59,28 @@ export default function App({ Component, pageProps }) {
     <AuthFlow>
       <Component {...pageProps} />
     </AuthFlow>
-  );
-}`;
+  );}`;
 
   const authSetupCode = `// app/api/auth/[...nextauth]/route.ts
 import NextAuth from "next-auth/next";
+import type { AuthOptions } from "next-auth";
+import type { JWT } from "next-auth/jwt";
+import type { Session, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
-import User from "../../../models/User";
-import { verifyToken } from "node-2fa";
+import User from "@/app/models/User";
 
-const handler = NextAuth({
-  session: { strategy: "jwt" },
+export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
-      name: "Credentials",
+      name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-        totpCode: { label: "2FA Code", type: "text" }
+        totpCode: { label: "2FA Code", type: "text", optional: true }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -87,7 +89,7 @@ const handler = NextAuth({
 
         await connectDB();
         const user = await User.findOne({ email: credentials.email });
-
+        
         if (!user) {
           throw new Error("No user found");
         }
@@ -97,28 +99,12 @@ const handler = NextAuth({
           throw new Error("Invalid password");
         }
 
-        // Check if 2FA is enabled
-        if (user.twoFactorEnabled) {
-          if (!credentials.totpCode) {
-            throw new Error("2FA_REQUIRED");
-          }
-
-          const isValidToken = verifyToken(
-            user.twoFactorSecret,
-            credentials.totpCode
-          );
-
-          if (!isValidToken || isValidToken.delta !== 0) {
-            throw new Error("Invalid 2FA code");
-          }
-        }
-
         return {
           id: user._id.toString(),
           email: user.email,
-          name: user.name
+          name: user.name,
         };
-      },
+      }
     }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -127,10 +113,30 @@ const handler = NextAuth({
     GitHubProvider({
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    }),
+    })
   ],
-  // ... rest of your configuration
-});`;
+  callbacks: {
+    async jwt({ token, user }: { token: JWT; user?: User }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }: { session: Session; token: JWT }) {
+      if (session.user) {
+        session.user.id = token.id;
+      }
+      return session;
+    }
+  },
+  pages: {
+    signIn: "/auth/login",
+    error: "/auth/error",
+  }
+};
+
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };`;
 
   const registerCode = `// app/api/auth/register/route.ts
 import { NextResponse } from "next/server";
@@ -138,9 +144,9 @@ import connectDB from "@/lib/db";
 import bcrypt from "bcryptjs";
 import User from "../../../models/User";
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const { name, email, password } = await request.json();
+    const { name, email, password } = await req.json();
 
     await connectDB();
 
@@ -302,7 +308,7 @@ const requestReset = async (email) => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation Bar */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-gray-200">
+      <nav className="sticky top-0 z-20 bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -315,7 +321,7 @@ const requestReset = async (email) => {
               <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent ml-2 md:ml-0">
                 AuthFlow
               </span>
-            </div>
+              </div>
             <div className="flex items-center space-x-4">
               <a 
                 href="https://github.com/AbeeraUmair/nextjs-auth" 
@@ -331,47 +337,10 @@ const requestReset = async (email) => {
         </div>
       </nav>
 
-      {/* Mobile Sidebar */}
-      <div
-        className={`fixed inset-0 z-40 lg:hidden ${
-          isSidebarOpen ? 'block' : 'hidden'
-        }`}
-      >
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setIsSidebarOpen(false)} />
-        <div className="fixed inset-y-0 left-0 flex flex-col w-full max-w-xs bg-white">
-          <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
-            <span className="font-semibold text-gray-900">Navigation</span>
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <span className="sr-only">Close sidebar</span>
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <DocsSidebar activeTab={activeTab} setActiveTab={(tab) => {
-              setActiveTab(tab);
-              setIsSidebarOpen(false);
-            }} />
-          </div>
-        </div>
-      </div>
+    
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex gap-8 py-8">
-          {/* Desktop Sidebar */}
-          <div className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-20">
-              <DocsSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-            </div>
-          </div>
-
-          {/* Content Area */}
-          <div className="flex-1">
+            {/* Content Area */}
+            <div className="flex-1">
             <div className={`${proseClasses} px-0 sm:px-4 md:px-6`}>
               {activeTab === 'introduction' && (
                 <div>
@@ -428,7 +397,7 @@ const requestReset = async (email) => {
                           and database connections. Create a <code>.env.local</code> file in your project root.
                         </p>
                       </div>
-                      <SyntaxHighlighter language="bash" style={tomorrow}>
+                  <SyntaxHighlighter language="bash" style={tomorrow}>
                         {`# .env.local
 
 # MongoDB Connection
@@ -1473,7 +1442,14 @@ ${resetPasswordCode}
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    
+  );
+}
+
+export default function DocsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DocsContent />
+    </Suspense>
   );
 } 

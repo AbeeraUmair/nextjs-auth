@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 
 export default function Enable2FAPage() {
   const [qrCode, setQrCode] = useState<string>("")
@@ -112,12 +113,13 @@ export default function Enable2FAPage() {
       {qrCode && !isSetupComplete && (
         <div className="space-y-6">
           <div className="flex justify-center">
-            <img
+            <Image
               src={qrCode}
               alt="2FA QR Code"
               width={200}
               height={200}
               style={{ margin: 'auto' }}
+
             />
           </div>
           <div className="space-y-4">
