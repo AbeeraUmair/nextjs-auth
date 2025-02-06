@@ -4,11 +4,12 @@ import User from "@/app/models/User";
 import connectDB from "@/lib/db";
 import QRCode from "qrcode";
 import { getServerSession } from "next-auth";
+import { authOptions } from "../[...nextauth]/route";
 
 export async function POST(req: Request) {
   try {
-    // Verify session
-    const session = await getServerSession();
+    // Pass authOptions to getServerSession
+    const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ 
         error: "Unauthorized" 
