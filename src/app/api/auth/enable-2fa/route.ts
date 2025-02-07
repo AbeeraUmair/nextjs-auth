@@ -1,77 +1,77 @@
 import { NextResponse } from "next/server";
-import { generateSecret } from "node-2fa";
-import User from "@/app/models/User";
-import connectDB from "@/lib/db";
-import QRCode from "qrcode";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth.config";
+import { authOptions } from "@/lib/auth.config";
+import User from "@/app/models/User";
+import { generateTOTPSecret, generateTOTPUri } from "@/lib/totp";
+import QRCode from "qrcode";
+import connectDB from "@/lib/db";
 
-export async function POST(req: Request) {
+export async function POST(): Promise<NextResponse> {
+  await connectDB();
+  
   try {
-    // Pass authOptions to getServerSession
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ 
-        error: "Unauthorized" 
-      }, { status: 401 });
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    await connectDB();
-    const { userId } = await req.json();
-    
-    console.log("Received userId:", userId);
+    // Generate new TOTP secret
+    const secret = generateTOTPSecret();
+    console.log("Generated new secret:", secret);
 
-    if (!userId) {
-      return NextResponse.json({ 
-        error: "User ID is required" 
-      }, { status: 400 });
+    // Force update with $set
+    const result = await User.updateOne(
+      { _id: session.user.id },
+      { 
+        $set: { 
+          tempTwoFactorSecret: secret,
+          twoFactorEnabled: false 
+        } 
+      },
+      { upsert: false, strict: true }
+    );
+
+    console.log("Update result:", result);
+
+    // Verify save with lean() to get raw object
+    const verifyUser = await User.findById(session.user.id).lean();
+    if (Array.isArray(verifyUser)) {
+      throw new Error("Unexpected array response");
     }
 
-    const user = await User.findById(userId);
-    console.log("Found user:", user ? "yes" : "no");
-
-    if (!user) {
-      return NextResponse.json({ 
-        error: "User not found" 
-      }, { status: 404 });
-    }
-
-    // Generate new secret
-    const newSecret = generateSecret({
-      name: "AuthFlow",
-      account: user.email
+    console.log("2FA Setup Status:", {
+      userId: verifyUser?._id,
+      tempSecret: verifyUser?.tempTwoFactorSecret ? 'saved' : 'missing',
+      actualSecret: verifyUser?.tempTwoFactorSecret,
+      secretMatch: verifyUser?.tempTwoFactorSecret === secret,
+      fullUser: verifyUser
     });
 
-    if (!newSecret || !newSecret.secret) {
-      return NextResponse.json({ 
-        error: "Failed to generate 2FA secret" 
-      }, { status: 500 });
+    if (!verifyUser?.tempTwoFactorSecret) {
+      throw new Error("Failed to save secret");
     }
 
-    try {
-      // Generate QR code as data URL
-      const otpauthUrl = `otpauth://totp/AuthFlow:${user.email}?secret=${newSecret.secret}&issuer=AuthFlow`;
-      const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
-
-      // Save secret to user (but mark as unverified)
-      user.twoFactorSecret = newSecret.secret;
-      user.twoFactorEnabled = false;
-      await user.save();
-
-      return NextResponse.json({ 
-        qr: qrCodeDataUrl,
-        message: "2FA setup initiated successfully" 
-      });
-    } catch (qrError) {
-      console.error("QR Code Generation Error:", qrError);
-      return NextResponse.json({ 
-        error: "Failed to generate QR code" 
-      }, { status: 500 });
-    }
+    // Generate QR code
+    const uri = generateTOTPUri(
+      secret,
+      verifyUser.email || "user",
+      "AuthFlow"
+    );
+    
+    const qrCode = await QRCode.toDataURL(uri);
+    console.log("Generated TOTP URI:", uri);
+    return NextResponse.json({ 
+      qr: qrCode,
+      secret: secret
+    });
   } catch (error) {
     console.error("2FA Setup Error:", error);
-    return NextResponse.json({ 
-      error: "Internal server error during 2FA setup" 
-    }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to setup 2FA" },
+      { status: 500 }
+    );
   }
 } 

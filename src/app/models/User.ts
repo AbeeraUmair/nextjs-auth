@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String,},
+  password: { type: String },
   verified: { type: Boolean, default: false },
   resetToken: String,
   resetTokenExpires: Date,
@@ -12,9 +12,9 @@ const userSchema = new mongoose.Schema({
   otp: String,
   otpExpires: Date,
   provider: { type: String, default: 'credentials' },
-  twoFactorSecret: String,
+  tempTwoFactorSecret: { type: String, required: false },
+  twoFactorSecret: { type: String, required: false },
 }, { timestamps: true });
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);
-
 export default User;

@@ -35,9 +35,7 @@ export default function Enable2FAPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
-          userId: session.user.id 
-        }),
+        body: JSON.stringify({})
       })
 
       const data = await response.json()
@@ -62,18 +60,26 @@ export default function Enable2FAPage() {
 
   const verify2FASetup = async () => {
     try {
+      setIsLoading(true)
+      setMessage("")
+
+      if (!verificationCode || verificationCode.length !== 6) {
+        setMessage("Please enter a valid 6-digit code")
+        return
+      }
+
       const response = await fetch("/api/auth/verify-2fa-setup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: session?.user?.id,
           token: verificationCode,
         }),
       })
 
       const data = await response.json()
+      
       if (response.ok) {
         setIsSetupComplete(true)
         setMessage("2FA enabled successfully!")
@@ -81,8 +87,11 @@ export default function Enable2FAPage() {
       } else {
         setMessage(data.error || "Verification failed")
       }
-    } catch {
-      setMessage("Failed to verify code")
+    } catch (error) {
+      console.error("2FA verification error:", error)
+      setMessage("Failed to verify code. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -140,9 +149,12 @@ export default function Enable2FAPage() {
             />
             <button
               onClick={verify2FASetup}
-              className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+              disabled={isLoading}
+              className={`w-full ${
+                isLoading ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'
+              } text-white py-2 rounded transition-colors`}
             >
-              Verify Code
+              {isLoading ? 'Verifying...' : 'Verify Code'}
             </button>
           </div>
         </div>
