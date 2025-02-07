@@ -52,7 +52,7 @@ function SidebarContent({ isOpen, toggleSidebar }: { isOpen: boolean; toggleSide
 
             <SidebarLink href="/auth/login" text="🔒 Login" />
             <SidebarLink href="/auth/register" text="📝 Register" />
-            <SidebarLink href="/settings/enable-2fa" text="🛡️ Enable 2FA" />
+            <SidebarLink href="/enable-2fa" text="🛡️ Enable 2FA" />
             <SidebarLink href="/reset-password/request" text="📩 Reset Password" />
           </nav>
         </div>

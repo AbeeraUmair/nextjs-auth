@@ -5,7 +5,8 @@ import GitHubProvider from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
 import User from "@/app/models/User";
-import { verifyToken } from "node-2fa";
+// import { verifyToken } from "node-2fa";
+import speakeasy from "speakeasy";
 
 export const authOptions: AuthOptions = {
   session: { strategy: "jwt" },
@@ -39,12 +40,14 @@ export const authOptions: AuthOptions = {
             throw new Error("2FA_REQUIRED");
           }
 
-          const isValidToken = verifyToken(
-            user.twoFactorSecret,
-            credentials.totpCode
-          );
+          const isValidToken = speakeasy.totp.verify({
+            secret: user.twoFactorSecret,
+            encoding: "base32",
+            token: credentials.totpCode,
+            window: 1, // Allows a small time difference
+          });
 
-          if (!isValidToken || isValidToken.delta !== 0) {
+          if (!isValidToken) {
             throw new Error("Invalid 2FA code");
           }
         }

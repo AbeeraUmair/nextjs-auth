@@ -1,3 +1,5 @@
+import React from 'react';
+
 export default function DocsSidebar({ activeTab, setActiveTab }: { 
   activeTab: string; 
   setActiveTab: (tab: string) => void;
@@ -36,7 +38,7 @@ export default function DocsSidebar({ activeTab, setActiveTab }: {
   ];
 
   return (
-    <nav className="max-h-[calc(100vh-12rem)] overflow-y-auto hover:overflow-y-auto scrollbar-none">
+    <nav className="max-h-[calc(100vh-12rem)] overflow-y-auto hover:overflow-y-auto scrollbar-hide">
       {navItems.map((section) => (
         <div key={section.section} className="mb-8">
           <h5 className="mb-3 text-sm font-semibold text-gray-900">
@@ -62,4 +64,4 @@ export default function DocsSidebar({ activeTab, setActiveTab }: {
       ))}
     </nav>
   );
-} 
+}

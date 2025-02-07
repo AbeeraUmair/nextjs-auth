@@ -1,3 +1,4 @@
+// /app/api/auth/verify-2fa-setup/route.ts 
 import { NextResponse } from "next/server"
 import User from "@/app/models/User"
 import { verifyTOTP } from "@/lib/totp"

@@ -1,10 +1,12 @@
+// /app/api/auth/enable-2fa/route.ts 
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth.config";
 import User from "@/app/models/User";
-import { generateTOTPSecret, generateTOTPUri } from "@/lib/totp";
+import {  generateTOTPUri } from "@/lib/totp";
 import QRCode from "qrcode";
 import connectDB from "@/lib/db";
+import speakeasy from "speakeasy";
 
 export async function POST(): Promise<NextResponse> {
   await connectDB();
@@ -19,15 +21,17 @@ export async function POST(): Promise<NextResponse> {
     }
 
     // Generate new TOTP secret
-    const secret = generateTOTPSecret();
-    console.log("Generated new secret:", secret);
+    // const secret = generateTOTPSecret();
+    // console.log("Generated new secret:", secret);
+    const secret = speakeasy.generateSecret({ length: 20 }); // Generates a Base32 secret
+console.log("TOTP Secret (Base32):", secret.base32);
 
     // Force update with $set
     const result = await User.updateOne(
       { _id: session.user.id },
       { 
         $set: { 
-          tempTwoFactorSecret: secret,
+          tempTwoFactorSecret: secret.base32,
           twoFactorEnabled: false 
         } 
       },
@@ -56,7 +60,7 @@ export async function POST(): Promise<NextResponse> {
 
     // Generate QR code
     const uri = generateTOTPUri(
-      secret,
+      secret.base32,
       verifyUser.email || "user",
       "AuthFlow"
     );
